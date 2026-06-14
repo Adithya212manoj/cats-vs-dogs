@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cat vs Dog Classifier</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f0f0f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: white;
+    }
+    .container {
+      text-align: center;
+      width: 500px;
+      padding: 20px;
+    }
+    h1 { font-size: 2rem; margin-bottom: 5px; }
+    p { color: #888; margin-bottom: 20px; }
+
+    /* Tab buttons */
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px solid #333;
+      background: #1a1a1a;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .tab.active {
+      border-color: #4f46e5;
+      background: #4f46e5;
+    }
+
+    /* Camera section */
+    #cameraSection, #uploadSection { display: none; }
+    #cameraSection.active, #uploadSection.active { display: block; }
+
+    video {
+      width: 100%;
+      border-radius: 16px;
+      border: 3px solid #333;
+    }
+    canvas { display: none; }
+
+    /* Captured image preview */
+    #preview {
+      width: 100%;
+      border-radius: 16px;
+      border: 3px solid #4f46e5;
+      display: none;
+      margin-bottom: 10px;
+    }
+
+    /* Upload area */
+    .upload-area {
+      border: 2px dashed #444;
+      border-radius: 16px;
+      padding: 40px;
+      cursor: pointer;
+      transition: border-color 0.3s;
+      margin-bottom: 10px;
+    }
+    .upload-area:hover { border-color: #4f46e5; }
+    .upload-area p { color: #888; margin: 0; }
+    input[type="file"] { display: none; }
+
+    /* Result box */
+    .result-box {
+      background: #1a1a1a;
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 20px;
+      display: none;
+    }
+    .emoji { font-size: 3rem; }
+    .prediction {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .confidence-bar-bg {
+      background: #333;
+      border-radius: 10px;
+      height: 12px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .confidence-bar {
+      height: 12px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #4f46e5, #7c3aed);
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+    .confidence-text {
+      color: #888;
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+
+    /* Buttons */
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 10px;
+      color: white;
+    }
+    #startBtn { background: #4f46e5; }
+    #startBtn:hover { background: #4338ca; }
+    #captureBtn {
+      background: #16a34a;
+      display: none;
+    }
+    #captureBtn:hover { background: #15803d; }
+    #retakeBtn {
+      background: #dc2626;
+      display: none;
+    }
+    #retakeBtn:hover { background: #b91c1c; }
+    #predictCameraBtn {
+      background: #4f46e5;
+      display: none;
+    }
+    #predictUploadBtn {
+      background: #4f46e5;
+      display: none;
+    }
+    .loading { color: #888; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🐱 Cat vs Dog 🐶</h1>
+    <p>Take a photo or upload an image to classify!</p>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('camera')">📷 Camera</button>
+      <button class="tab" onclick="switchTab('upload')">📁 Upload</button>
+    </div>
+
+    <!-- Camera Section -->
+    <div id="cameraSection" class="active">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas"></canvas>
+      <img id="preview">
+
+      <button id="startBtn" onclick="startCamera()">📷 Start Camera</button>
+      <button id="captureBtn" onclick="capturePhoto()">📸 Click Photo</button>
+      <button id="retakeBtn" onclick="retakePhoto()">🔄 Retake</button>
+      <button id="predictCameraBtn" onclick="predictCamera()">🔍 Predict!</button>
+    </div>
+
+    <!-- Upload Section -->
+    <div id="uploadSection">
+      <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <p>📁 Click to upload image</p>
+        <p style="font-size:0.8rem; margin-top:5px">JPG, PNG supported</p>
+        <input type="file" id="fileInput" accept="image/*" onchange="handleUpload()">
+      </div>
+      <img id="uploadPreview" style="width:100%; border-radius:16px; display:none; margin-bottom:10px;">
+      <button id="predictUploadBtn" onclick="predictUpload()">🔍 Predict!</button>
+    </div>
+
+    <!-- Result -->
+    <div class="result-box" id="resultBox">
+      <div class="emoji" id="emoji"></div>
+      <div class="prediction" id="prediction"></div>
+      <div class="confidence-bar-bg">
+        <div class="confidence-bar" id="bar"></div>
+      </div>
+      <div class="confidence-text" id="confidence"></div>
+    </div>
+
+    <p class="loading" id="loading"></p>
+  </div>
+
+  <script>
+    let stream = null
+    let capturedBlob = null
+
+    // Switch between Camera and Upload tabs
+    function switchTab(tab) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"))
+      document.querySelectorAll(".tab")[tab === "camera" ? 0 : 1].classList.add("active")
+      document.getElementById("cameraSection").classList.toggle("active", tab === "camera")
+      document.getElementById("uploadSection").classList.toggle("active", tab === "upload")
+      document.getElementById("resultBox").style.display = "none"
+
+      // Stop camera if switching to upload
+      if (tab === "upload" && stream) {
+        stream.getTracks().forEach(t => t.stop())
+        stream = null
+        resetCameraUI()
+      }
+    }
+
+    // Start Camera
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        document.getElementById("video").srcObject = stream
+        document.getElementById("video").style.display = "block"
+        document.getElementById("startBtn").style.display = "none"
+        document.getElementById("captureBtn").style.display = "block"
+      } catch (err) {
+        alert("Camera access denied! Please allow camera access.")
+      }
+    }
+
+    // Capture Photo
+    function capturePhoto() {
+      const video = document.getElementById("video")
+      const canvas = document.getElementById("canvas")
+      const preview = document.getElementById("preview")
+
+      // Draw current frame to canvas
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      canvas.getContext("2d").drawImage(video, 0, 0)
+
+      // Show captured image
+      preview.src = canvas.toDataURL("image/jpeg")
+      preview.style.display = "block"
+      video.style.display = "none"
+
+      // Convert to blob for API
+      canvas.toBlob(blob => { capturedBlob = blob }, "image/jpeg")
+
+      // Update buttons
+      document.getElementById("captureBtn").style.display = "none"
+      document.getElementById("retakeBtn").style.display = "block"
+      document.getElementById("predictCameraBtn").style.display = "block"
+      document.getElementById("resultBox").style.display = "none"
+    }
+
+    // Retake Photo
+    function retakePhoto() {
+      document.getElementById("preview").style.display = "none"
+      document.getElementById("video").style.display = "block"
+      document.getElementById("retakeBtn").style.display = "none"
+      document.getElementById("predictCameraBtn").style.display = "none"
+      document.getElementById("captureBtn").style.display = "block"
+      document.getElementById("resultBox").style.display = "none"
+      capturedBlob = null
+    }
+
+    // Reset camera UI
+    function resetCameraUI() {
+      document.getElementById("startBtn").style.display = "block"
+      document.getElementById("captureBtn").style.display = "none"
+      document.getElementById("retakeBtn").style.display = "none"
+      document.getElementById("predictCameraBtn").style.display = "none"
+      document.getElementById("preview").style.display = "none"
+      document.getElementById("video").style.display = "none"
+    }
+
+    // Predict from camera
+    async function predictCamera() {
+      if (!capturedBlob) return
+      const formData = new FormData()
+      formData.append("file", capturedBlob, "photo.jpg")
+      await sendToAPI(formData)
+    }
+
+    // Handle upload
+    function handleUpload() {
+      const file = document.getElementById("fileInput").files[0]
+      if (!file) return
+      const preview = document.getElementById("uploadPreview")
+      preview.src = URL.createObjectURL(file)
+      preview.style.display = "block"
+      document.getElementById("predictUploadBtn").style.display = "block"
+      document.getElementById("resultBox").style.display = "none"
+    }
+
+    // Predict from upload
+    async function predictUpload() {
+      const file = document.getElementById("fileInput").files[0]
+      if (!file) return
+      const formData = new FormData()
+      formData.append("file", file)
+      await sendToAPI(formData)
+    }
+
+    // Send to API and show result
+    async function sendToAPI(formData) {
+      document.getElementById("loading").innerText = "⏳ Analyzing..."
+      document.getElementById("resultBox").style.display = "none"
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/predict", {
+          method: "POST",
+          body: formData
+        })
+        const data = await response.json()
+
+        document.getElementById("loading").innerText = ""
+        document.getElementById("emoji").innerText = data.emoji
+        document.getElementById("prediction").innerText = data.prediction
+        document.getElementById("bar").style.width = data.confidence + "%"
+        document.getElementById("confidence").innerText =
+          "Confidence: " + data.confidence + "%"
+        document.getElementById("resultBox").style.display = "block"
+
+      } catch (err) {
+        document.getElementById("loading").innerText =
+          "❌ API not running! Start uvicorn first!"
+      }
+    }
+  </script>
+</body>
+</html>
