@@ -1,99 +1,54 @@
- Cats vs Dogs Image Classifier
+:-> Cats vs Dogs Classifier
 
-An AI-powered web application that classifies uploaded images as either a cat or a dog using Deep Learning and Transfer Learning techniques.
+This project is a simple image classification web application that predicts whether an uploaded image is a cat or a dog.
 
- 📌 Project Overview
+I built this project to understand how pretrained deep learning models can be used in real-world applications. It helped me learn how machine learning models, APIs, and web interfaces work together.
 
-This project uses a pretrained ResNet18 model to identify whether an uploaded image contains a cat or a dog. The model is fine-tuned using the Cats vs Dogs dataset and deployed through a FastAPI backend with a simple web interface.
+-> Features
 
-->Features
-
-- Upload an image through a web interface
+- Upload an image from your device
 - Predict whether the image is a cat or a dog
-- Display prediction confidence score
-- FastAPI backend for handling requests
-- Deep learning model built using PyTorch
-- Uses Transfer Learning with ResNet18
+- Display the prediction confidence
+- Simple web interface for user interaction
 
--> 🛠️ Technologies Used
+-> Technologies Used
 
 - Python
 - PyTorch
-- Torchvision
 - FastAPI
-- Uvicorn
-- Pillow
-- HTML
-- CSS
-- JavaScript
+- HTML, CSS and JavaScript
+- ResNet18 (Transfer Learning)
 - Kaggle Cats vs Dogs Dataset
 
 -> Project Structure
 
-```
-project/
-│
-├── model.py
-├── dataset.py
-├── train.py
-├── predict.py
-├── app.py
-├── index.html
-├── requirements.txt
-└── README.md
-```
--> 🧠 How It Works
+- `model.py` – Defines the ResNet18 model used for classification.
+- `dataset.py` – Loads and preprocesses the training images.
+- `train.py` – Fine-tunes the pretrained model using the Cats vs Dogs dataset.
+- `predict.py` – Generates predictions for new images.
+- `app.py` – FastAPI backend that handles prediction requests.
+- `index.html` – Frontend interface for uploading images and displaying results.
 
-1. The user uploads an image through the frontend.
-2. The image is sent to the FastAPI backend.
-3. The trained ResNet18 model processes the image.
-4. The model predicts whether it is a cat or a dog.
-5. The result and confidence score are displayed to the user.
 
--> Running the Project
+-> How It Works
 
---> Clone the repository
+The user uploads an image through the web page. The image is sent to the FastAPI backend, where the trained model processes it and returns the prediction along with its confidence score. The result is then displayed on the screen.
 
-```bash
-git clone https://github.com/your-username/your-repository-name.git
-```
+-> What I Learned
 
--> Install dependencies
+- Working with pretrained models using transfer learning
+- Training and testing image classification models
+- Building APIs using FastAPI
+- Connecting frontend and backend components
+- Understanding the complete workflow of a small AI application
 
-```bash
-pip install -r requirements.txt
-```
+-> Future Improvements
 
---> Start the FastAPI server
+- Support more animal categories
+- Improve the user interface
+- Deploy the application online
+- Experiment with different models for better performance
 
-```bash
-uvicorn app:app --reload
-```
+## Note
 
--->Open in browser
-
-Visit:
-
-```
-http://127.0.0.1:8000
-```
-
--> Model Information
-
-- Model: ResNet18
-- Technique: Transfer Learning
-- Task: Binary Image Classification (Cat vs Dog)
-
--> Learning Outcomes
-
-Through this project, I gained practical experience in:
-
-- Deep Learning with PyTorch
-- Transfer Learning
-- Building REST APIs using FastAPI
-- Frontend and Backend integration
-- Image preprocessing and prediction workflows
-
-## 📄 License
-
-This project is created for educational and learning purposes.
+This project was built as a learning project to gain hands-on experience in deep learning and full-stack integration.
